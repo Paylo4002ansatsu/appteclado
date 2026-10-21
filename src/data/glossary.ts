@@ -1,0 +1,26 @@
+export type GlossaryEntry = { term: string; definition: string; group: string };
+
+export const glossary: GlossaryEntry[] = [
+  { term: 'Acorde', definition: 'Duas ou mais notas ouvidas juntas. Uma tríade básica tem três notas.', group: 'Harmonia' },
+  { term: 'Armadura de clave', definition: 'Conjunto de sustenidos ou bemóis que aparece após a clave e orienta as alterações da música.', group: 'Leitura' },
+  { term: 'Bemol', definition: 'Sinal que baixa a nota em um semitom.', group: 'Notas' },
+  { term: 'Compasso', definition: 'Organização dos tempos em grupos que se repetem ao longo da música.', group: 'Ritmo' },
+  { term: 'Clave', definition: 'Símbolo que define a referência das notas na pauta. As mais usadas no teclado são sol e fá.', group: 'Leitura' },
+  { term: 'Dó central', definition: 'Nota próxima ao centro do teclado usada como referência de leitura e posição.', group: 'Notas' },
+  { term: 'Figura rítmica', definition: 'Símbolo que indica a duração relativa de uma nota ou silêncio.', group: 'Ritmo' },
+  { term: 'Fundamental', definition: 'Nota que dá nome e serve de base para um acorde ou escala.', group: 'Harmonia' },
+  { term: 'Intervalo', definition: 'Distância entre duas notas, ouvidas em sequência ou ao mesmo tempo.', group: 'Notas' },
+  { term: 'Ligadura', definition: 'Linha curva que une notas de mesma altura e soma suas durações sem novo ataque.', group: 'Ritmo' },
+  { term: 'Metrônomo', definition: 'Ferramenta que produz pulsos regulares para ajudar a manter o andamento.', group: 'Ritmo' },
+  { term: 'Oitava', definition: 'Distância entre uma nota e a próxima nota de mesmo nome, mais grave ou mais aguda.', group: 'Notas' },
+  { term: 'Pauta', definition: 'Conjunto de cinco linhas e quatro espaços onde se escrevem as notas musicais.', group: 'Leitura' },
+  { term: 'Ponto de aumento', definition: 'Ponto ao lado da nota que acrescenta metade do valor original à sua duração.', group: 'Ritmo' },
+  { term: 'Pulsação', definition: 'Batida regular que sustenta a música e serve de referência para o andamento.', group: 'Ritmo' },
+  { term: 'Semitom', definition: 'Menor distância entre duas teclas adjacentes no teclado.', group: 'Notas' },
+  { term: 'Sustenido', definition: 'Sinal que eleva a nota em um semitom.', group: 'Notas' },
+  { term: 'Timbre', definition: 'Qualidade que permite distinguir sons diferentes mesmo quando têm a mesma altura.', group: 'Som' },
+  { term: 'Tom', definition: 'Distância de dois semitons.', group: 'Notas' },
+  { term: 'Tônica', definition: 'Nota que funciona como centro ou ponto de repouso de uma tonalidade.', group: 'Harmonia' },
+  { term: 'Tríade', definition: 'Acorde formado por três notas, normalmente fundamental, terça e quinta.', group: 'Harmonia' },
+  { term: 'Voice leading', definition: 'Condução de vozes: movimento econômico e coerente de cada nota de um acorde para o seguinte.', group: 'Harmonia' },
+];
