@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1793424154109,
+      "tag": "0000_lame_prodigy",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1793462903142,
+      "tag": "0001_keen_mach_iv",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1793463468464,
+      "tag": "0002_chief_tana_nile",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { lessonsLevel3 } from './lessonsLevel3';
+
 export type Lesson = {
   explanation: string;
   example: string;
@@ -9,6 +11,7 @@ export type Lesson = {
 const lesson = (explanation: string, example: string, exercises: string[], checklist: string[], highlight?: string[]): Lesson => ({ explanation, example, exercises, checklist, highlight });
 
 export const lessons: Record<string, Lesson> = {
+  ...lessonsLevel3,
   'n1-m1-t1': lesson('Piano digital imita a resposta do piano; arranjador traz ritmos e acompanhamentos prontos; sintetizador cria e transforma timbres; controlador MIDI envia notas a um computador, mas normalmente não produz som sozinho.', 'Um piano digital é simples para praticar. Um arranjador pode acompanhar um forró. Um controlador precisa de um aplicativo ou módulo de som.', ['Toque a mesma nota num piano digital e num arranjador e compare a resposta.', 'Procure no painel qual saída de áudio cada tipo costuma usar.'], ['Sei distinguir piano digital, arranjador, sintetizador e controlador.', 'Sei dizer quando preciso de caixa de som ou computador.']),
   'n1-m1-t2': lesson('As teclas são a interface de toque. O painel concentra volume, seleção de sons e controles. As conexões podem incluir fone, sustain, USB ou áudio. A fonte de energia alimenta o instrumento.', 'Antes de ligar, localize volume, botão liga/desliga, saída de fone e pedal sustain. Nem todo modelo tem as mesmas conexões.', ['Aponte as partes do seu instrumento sem ligar.', 'Leia a legenda das conexões no manual e identifique uma saída.'], ['Localizo controles e conexões principais.', 'Sei onde conectar o fone sem forçar o cabo.']),
   'n1-m1-t3': lesson('Timbre é a cor do som. A mesma nota pode soar como piano, órgão, cordas ou sintetizador. Comece com um piano simples: ele deixa o ataque e a duração da nota mais fáceis de perceber.', 'Toque Dó4 com piano e depois com órgão. A altura é a mesma; muda o timbre.', ['Escolha três timbres e toque a mesma nota.', 'Anote qual timbre ajuda mais a ouvir uma melodia curta.'], ['Entendo que timbre não muda o nome da nota.', 'Consigo escolher um som sem alterar o volume bruscamente.']),

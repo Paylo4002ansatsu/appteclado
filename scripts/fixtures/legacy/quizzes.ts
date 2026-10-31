@@ -1,8 +1,10 @@
 import { allModules, type CourseModule } from './curriculum';
+import { quizzesLevel3 } from './quizzesLevel3';
 
 export type QuizQuestion = { prompt: string; options: string[]; answer: number; explanation: string };
 
 const bank: Record<string, QuizQuestion[]> = {
+  ...quizzesLevel3,
   'n1-m1': [
     { prompt: 'Qual instrumento normalmente precisa de um computador ou módulo de som para produzir áudio?', options: ['Controlador MIDI', 'Piano digital', 'Teclado arranjador', 'Órgão acústico'], answer: 0, explanation: 'O controlador MIDI envia informações de notas; o som vem de um software ou módulo.' },
     { prompt: 'O que muda quando você toca a mesma nota com piano e órgão?', options: ['O timbre', 'O nome da nota', 'A oitava automaticamente', 'A tecla física'], answer: 0, explanation: 'Timbre é a cor do som. A altura e o nome da nota permanecem iguais.' },

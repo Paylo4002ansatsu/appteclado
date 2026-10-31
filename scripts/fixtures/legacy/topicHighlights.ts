@@ -22,7 +22,7 @@ const flatToEnharmonic: Record<string, string> = {
 };
 
 export const topicHighlights = Object.fromEntries(allTopics
-  .filter((topic) => topic.module.number <= 10)
+  .filter((topic) => topic.module.number <= 15)
   .map((topic) => {
     const patterns = byModule[topic.module.number] ?? [];
     const index = topic.module.topics.findIndex((entry) => entry.id === topic.id);

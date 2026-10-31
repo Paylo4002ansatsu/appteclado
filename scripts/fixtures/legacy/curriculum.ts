@@ -113,5 +113,5 @@ export const allTopics = allModules.flatMap((courseModule) => courseModule.topic
 export const findTopic = (id: string) => allTopics.find((topic) => topic.id === id);
 export const findModule = (id: string) => allModules.find((courseModule) => courseModule.id === id);
 export const levelForModuleNumber = (number: number) => levels.find((level) => level.modules.some((m) => m.number === number));
-export const contentReady = (moduleNumber: number) => moduleNumber <= 10;
+export const contentReady = (moduleNumber: number) => moduleNumber <= 15;
 export const moduleProgressIds = (module: CourseModule) => module.topics.map((topic) => topic.id);

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { ListMusic, Play } from 'lucide-react';
-import type { ChordLessonConfig, ChordOption } from '../data/chordLessons';
+import type { ChordLessonConfig, ChordOption } from '../data/courseTypes';
 import { playArpeggio, playChord, stopChordPlayback } from '../lib/audio';
 import { PianoKeyboard } from './PianoKeyboard';
 

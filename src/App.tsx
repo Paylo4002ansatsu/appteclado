@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BrowserRouter, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AudioLines, BookOpen, ChevronRight, Compass, Home, Menu, Moon, Music2, Search, Sun, X } from 'lucide-react';
 import { ProgressProvider, useProgress } from './context/ProgressContext';
-import { allTopics } from './data/curriculum';
+import { CourseContentProvider, useCourseContent } from './context/CourseContentContext';
 import { ProgressBar } from './components/ProgressBar';
 import { HomePage } from './pages/HomePage';
 import { TrailPage } from './pages/TrailPage';
 import { LevelPage, LessonPage, ModulePage, NotFoundPage } from './pages/CoursePages';
 import { CurationPage, GlossaryPage, LevelTestPage, PracticePage } from './pages/ToolsPages';
+import { AdminPage } from './pages/AdminPage';
 
 const navItems: { to: string; label: string; icon: ReactNode; end?: boolean }[] = [
   { to: '/', label: 'Início', icon: <Home size={18} />, end: true },
@@ -25,14 +26,16 @@ function AppShell() {
   const [search, setSearch] = useState('');
   const searchInput = useRef<HTMLInputElement>(null);
   const { completed, theme, setTheme } = useProgress();
+  const { readyTopics } = useCourseContent();
   const location = useLocation();
   const navigate = useNavigate();
   const found = useMemo(() => {
     if (search.trim().length < 2) return [];
     const term = normalizeSearch(search.trim());
-    return allTopics.filter((topic) => normalizeSearch(topic.title).includes(term) || normalizeSearch(topic.module.title).includes(term)).slice(0, 8);
-  }, [search]);
-  const totalProgress = Math.round(completed.length / Math.max(1, allTopics.filter((topic) => topic.module.number <= 10).length) * 100);
+    return readyTopics.filter((topic) => normalizeSearch(topic.title).includes(term) || normalizeSearch(topic.module.title).includes(term)).slice(0, 8);
+  }, [readyTopics, search]);
+  const doneCount = completed.filter((id) => readyTopics.some((topic) => topic.id === id)).length;
+  const totalProgress = Math.round(doneCount / Math.max(1, readyTopics.length) * 100);
   const pathName = location.pathname === '/' ? 'Início' : navItems.find((item) => item.to !== '/' && location.pathname.startsWith(item.to))?.label ?? 'Sua trilha';
 
   useEffect(() => {
@@ -65,7 +68,7 @@ function AppShell() {
           <span className="nav-section-label">CURSO</span>
           {navItems.map((item) => <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} onClick={() => setMobileNav(false)}>{item.icon}<span>{item.label}</span>{item.to === '/trilha' && <ChevronRight size={15} className="nav-chevron" />}</NavLink>)}
         </nav>
-        <div className="sidebar-progress"><div className="sidebar-progress-top"><span>Seu progresso</span><strong>{totalProgress}%</strong></div><ProgressBar value={totalProgress} compact /><p>{completed.length} aulas concluídas</p><NavLink to="/trilha" className="sidebar-link">Ver percurso <ChevronRight size={14} /></NavLink></div>
+        <div className="sidebar-progress"><div className="sidebar-progress-top"><span>Seu progresso</span><strong>{totalProgress}%</strong></div><ProgressBar value={totalProgress} compact /><p>{doneCount} aulas concluídas</p><NavLink to="/trilha" className="sidebar-link">Ver percurso <ChevronRight size={14} /></NavLink></div>
         <div className="sidebar-footer"><span className="sidebar-note">Aprender também é voltar com calma.</span><span className="version-label">TRILHA DO TECLADO · 1.0</span></div>
       </aside>
       <div className="site-column">
@@ -90,7 +93,7 @@ function AppShell() {
   );
 }
 
-function RoutedApp() {
+function PublicRoutes() {
   return <Routes><Route element={<AppShell />}>
     <Route path="/" element={<HomePage />} />
     <Route path="/trilha" element={<TrailPage />} />
@@ -103,6 +106,13 @@ function RoutedApp() {
     <Route path="/curadoria" element={<CurationPage />} />
     <Route path="*" element={<NotFoundPage />} />
   </Route></Routes>;
+}
+
+function RoutedApp() {
+  return <CourseContentProvider><Routes>
+    <Route path="/admin/*" element={<AdminPage />} />
+    <Route path="/*" element={<PublicRoutes />} />
+  </Routes></CourseContentProvider>;
 }
 
 export default function App() {
