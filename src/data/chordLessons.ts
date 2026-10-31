@@ -36,42 +36,78 @@ const fMajor = option('f-major', 'Fá maior (F)', [65, 69, 72]);
 const gMajor = option('g-major', 'Sol maior (G)', [67, 71, 74]);
 const aMinor = option('a-minor', 'Lá menor (Am)', [69, 72, 76]);
 const dMinor = option('d-minor', 'Ré menor (Dm)', [62, 65, 69]);
-const bDiminished = option('b-diminished', 'Si diminuto (Bdim)', [71, 74, 77]);
-const cMaj7 = option('c-maj7', 'Dó com sétima maior (Cmaj7)', [60, 64, 67, 71]);
 const g7 = option('g7', 'Sol dominante com sétima (G7)', [67, 71, 74, 77]);
-const d7 = option('d7', 'Ré dominante com sétima (D7)', [62, 66, 69, 72]);
-const dMinor7 = option('d-minor7', 'Ré menor com sétima (Dm7)', [62, 65, 69, 72]);
-const aMinor7 = option('a-minor7', 'Lá menor com sétima (Am7)', [69, 72, 76, 79]);
 const fMinor = option('f-minor', 'Fá menor (Fm)', [65, 68, 72], { spellings: ['Fá', 'Lá bemol', 'Dó'] });
+
+type ChordFamily = { id: string; name: string; suffix: string; intervals: number[] };
+
+const chromaticRoots = [
+  { id: 'c', midi: 60, name: 'Dó', symbol: 'C' },
+  { id: 'c-sharp', midi: 61, name: 'Dó sustenido', symbol: 'C#' },
+  { id: 'd', midi: 62, name: 'Ré', symbol: 'D' },
+  { id: 'e-flat', midi: 63, name: 'Mi bemol', symbol: 'Eb' },
+  { id: 'e', midi: 64, name: 'Mi', symbol: 'E' },
+  { id: 'f', midi: 65, name: 'Fá', symbol: 'F' },
+  { id: 'f-sharp', midi: 66, name: 'Fá sustenido', symbol: 'F#' },
+  { id: 'g', midi: 67, name: 'Sol', symbol: 'G' },
+  { id: 'a-flat', midi: 68, name: 'Lá bemol', symbol: 'Ab' },
+  { id: 'a', midi: 69, name: 'Lá', symbol: 'A' },
+  { id: 'b-flat', midi: 70, name: 'Si bemol', symbol: 'Bb' },
+  { id: 'b', midi: 71, name: 'Si', symbol: 'B' },
+];
+
+const chromaticNoteNames = ['Dó', 'Dó sustenido', 'Ré', 'Mi bemol', 'Mi', 'Fá', 'Fá sustenido', 'Sol', 'Lá bemol', 'Lá', 'Si bemol', 'Si'];
+
+function familyOptions(family: ChordFamily, group?: string): ChordOption[] {
+  return chromaticRoots.map((root) => {
+    const midi = family.intervals.map((interval) => root.midi + interval);
+    const label = group
+      ? `${root.name} (${root.symbol}${family.suffix})`
+      : `${root.name} ${family.name} (${root.symbol}${family.suffix})`;
+    return option(
+      `${family.id}-${root.id}`,
+      label,
+      midi,
+      {
+        spellings: midi.map((pitch) => chromaticNoteNames[pitch % 12]),
+        ...(group ? { group } : {}),
+      },
+    );
+  });
+}
+
+const majorTriads = familyOptions({ id: 'triad-major', name: 'maior', suffix: '', intervals: [0, 4, 7] });
+const minorTriads = familyOptions({ id: 'triad-minor', name: 'menor', suffix: 'm', intervals: [0, 3, 7] });
+const diminishedTriads = familyOptions({ id: 'triad-diminished', name: 'diminuto', suffix: 'dim', intervals: [0, 3, 6] });
+const augmentedTriads = familyOptions({ id: 'triad-augmented', name: 'aumentado', suffix: 'aug', intervals: [0, 4, 8] });
+const majorSevenths = familyOptions({ id: 'major-seventh', name: 'com sétima maior', suffix: 'maj7', intervals: [0, 4, 7, 11] });
+const minorSevenths = familyOptions({ id: 'minor-seventh', name: 'menor com sétima', suffix: 'm7', intervals: [0, 3, 7, 10] });
+const dominantSevenths = familyOptions({ id: 'dominant-seventh', name: 'dominante com sétima', suffix: '7', intervals: [0, 4, 7, 10] });
+const halfDiminishedSevenths = familyOptions(
+  { id: 'half-diminished-seventh', name: 'meio-diminuto', suffix: 'm7♭5', intervals: [0, 3, 6, 10] },
+  'Meio-diminutos · m7♭5',
+);
+const diminishedSevenths = familyOptions(
+  { id: 'diminished-seventh', name: 'diminuto com sétima', suffix: 'dim7', intervals: [0, 3, 6, 9] },
+  'Diminutos com 7ª · dim7',
+);
 
 const byTopic: Record<string, ChordLessonConfig> = {
   'n2-m10-t1': {
-    prompt: 'Compare tríades maiores em diferentes regiões: a terça maior dá a cor característica do acorde.',
-    options: [cMajor, fMajor, gMajor],
+    prompt: 'Explore as 12 tríades maiores, uma para cada fundamental. A terça maior dá a cor característica do acorde.',
+    options: majorTriads,
   },
   'n2-m10-t2': {
-    prompt: 'Ouça a terça menor mudar a cor do acorde sem alterar sua fundamental.',
-    options: [
-      option('c-minor', 'Dó menor (Cm)', [60, 63, 67], { spellings: ['Dó', 'Mi bemol', 'Sol'] }),
-      aMinor,
-      dMinor,
-    ],
+    prompt: 'Explore as 12 tríades menores. Compare a terça menor e a sonoridade de cada fundamental.',
+    options: minorTriads,
   },
   'n2-m10-t3': {
-    prompt: 'A tríade diminuta reúne duas terças menores. Compare exemplos em notas diferentes.',
-    options: [
-      option('c-diminished', 'Dó diminuto (Cdim)', [60, 63, 66], { spellings: ['Dó', 'Mi bemol', 'Sol bemol'] }),
-      bDiminished,
-      option('d-diminished', 'Ré diminuto (Ddim)', [62, 65, 68], { spellings: ['Ré', 'Fá', 'Lá bemol'] }),
-    ],
+    prompt: 'Explore as 12 tríades diminutas. Cada acorde reúne duas terças menores.',
+    options: diminishedTriads,
   },
   'n2-m10-t4': {
-    prompt: 'Na tríade aumentada, a quinta sobe um semitom. Compare a sonoridade com uma tríade maior.',
-    options: [
-      option('c-augmented', 'Dó aumentado (Caug)', [60, 64, 68]),
-      option('f-augmented', 'Fá aumentado (Faug)', [65, 69, 73]),
-      option('g-augmented', 'Sol aumentado (Gaug)', [67, 71, 75], { spellings: ['Sol', 'Si', 'Ré sustenido'] }),
-    ],
+    prompt: 'Explore as 12 tríades aumentadas. A quinta sobe um semitom; algumas posições têm a mesma coleção de sons por simetria.',
+    options: augmentedTriads,
   },
   'n2-m10-t5': {
     prompt: 'As inversões mantêm as mesmas notas; muda apenas qual delas fica mais grave.',
@@ -175,31 +211,20 @@ const byTopic: Record<string, ChordLessonConfig> = {
     ],
   },
   'n3-m12-t1': {
-    prompt: 'A sétima maior fica um semitom abaixo da oitava. Compare a cor do acorde maj7 em diferentes fundamentais.',
-    options: [
-      cMaj7,
-      option('f-maj7', 'Fá com sétima maior (Fmaj7)', [65, 69, 72, 76]),
-      option('g-maj7', 'Sol com sétima maior (Gmaj7)', [67, 71, 74, 78]),
-    ],
+    prompt: 'Compare os 12 acordes com sétima maior (maj7), um para cada fundamental.',
+    options: majorSevenths,
   },
   'n3-m12-t2': {
-    prompt: 'No acorde menor com sétima, ouça a tríade menor junto da sétima menor.',
-    options: [
-      aMinor7,
-      dMinor7,
-      option('e-minor7', 'Mi menor com sétima (Em7)', [64, 67, 71, 74]),
-    ],
+    prompt: 'Compare os 12 acordes menores com sétima (m7), um para cada fundamental.',
+    options: minorSevenths,
   },
   'n3-m12-t3': {
-    prompt: 'A sétima menor cria tensão. Compare dominantes que resolvem em tonalidades diferentes.',
-    options: [g7, d7, option('a7', 'Lá dominante com sétima (A7)', [69, 73, 76, 79])],
+    prompt: 'Compare os 12 acordes dominantes com sétima (7), um para cada fundamental. Todos têm uma sétima menor.',
+    options: dominantSevenths,
   },
   'n3-m12-t4': {
-    prompt: 'No meio-diminuto a sétima é menor; no diminuto com sétima ela é ainda mais baixa. Compare a última nota.',
-    options: [
-      option('b-half-diminished', 'Si meio-diminuto (Bm7♭5)', [71, 74, 77, 81]),
-      option('b-diminished7', 'Si diminuto com sétima (Bdim7)', [71, 74, 77, 80], { spellings: ['Si', 'Ré', 'Fá', 'Lá bemol'] }),
-    ],
+    prompt: 'Compare as 12 versões de cada família. No meio-diminuto a sétima é menor; no diminuto com sétima ela é ainda mais baixa.',
+    options: [...halfDiminishedSevenths, ...diminishedSevenths],
   },
   'n3-m12-t5': {
     prompt: 'As quatro inversões mantêm as notas C–E–G–B. Ouça como muda o baixo.',
