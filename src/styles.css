@@ -736,6 +736,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .chord-player-status { min-height: 14px; margin: 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
 .chord-player .keyboard-wrap { margin-top: 0; }
 .piano.is-readonly .white-key, .piano.is-readonly .black-key { pointer-events: none; cursor: default; }
+.piano-credit { margin: 5px 0 0; color: var(--muted-2); font-size: 9px; line-height: 1.5; }
+.piano-credit a { color: var(--muted); text-underline-offset: 2px; }
+.hero-keyboard .piano-credit { display: none; }
 @media (max-width: 650px) {
   .chord-player { gap: 11px; padding: 11px; }
   .chord-player-select-wrap select { min-height: 46px; font-size: 16px; }

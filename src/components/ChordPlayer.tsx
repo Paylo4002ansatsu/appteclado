@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ListMusic, Play } from 'lucide-react';
 import type { ChordLessonConfig, ChordOption } from '../data/chordLessons';
-import { playArpeggio, playChord } from '../lib/audio';
+import { playArpeggio, playChord, stopChordPlayback } from '../lib/audio';
 import { PianoKeyboard } from './PianoKeyboard';
 
 const midiToFrequency = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
@@ -9,6 +9,7 @@ const midiToFrequency = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
 export function ChordPlayer({ config, topicId }: { config: ChordLessonConfig; topicId: string }) {
   const [selectedId, setSelectedId] = useState(config.options[0]?.id ?? '');
   const [status, setStatus] = useState('');
+  const playbackRequest = useRef(0);
   const selected = config.options.find((option) => option.id === selectedId) ?? config.options[0];
   const selectId = `chord-select-${topicId}`;
   const optionGroups = config.options.reduce<{ label: string; options: ChordOption[] }[]>((groups, option) => {
@@ -21,18 +22,28 @@ export function ChordPlayer({ config, topicId }: { config: ChordLessonConfig; to
 
   if (!selected) return null;
 
-  const hearChord = () => {
-    const played = playChord(selected.midi.map(midiToFrequency));
-    setStatus(played
+  const hearChord = async () => {
+    const request = ++playbackRequest.current;
+    setStatus('Carregando o timbre de piano…');
+    const result = await playChord(selected.midi.map(midiToFrequency));
+    if (request !== playbackRequest.current || result === 'cancelled') return;
+    setStatus(result === 'grand-piano'
       ? `${selected.label}: acorde tocado em conjunto.`
-      : 'O áudio não está disponível neste navegador.');
+      : result === 'fallback'
+        ? 'A amostra de piano não carregou; foi usado um som alternativo.'
+        : 'O áudio não está disponível neste navegador.');
   };
 
-  const hearSequence = () => {
-    const played = playArpeggio(selected.arpeggioMidi.map(midiToFrequency));
-    setStatus(played
+  const hearSequence = async () => {
+    const request = ++playbackRequest.current;
+    setStatus('Carregando o timbre de piano…');
+    const result = await playArpeggio(selected.arpeggioMidi.map(midiToFrequency));
+    if (request !== playbackRequest.current || result === 'cancelled') return;
+    setStatus(result === 'grand-piano'
       ? `${selected.label}: ${config.playSequenceLabel === 'Ouvir padrão' ? 'padrão' : 'arpejo'} tocado nota por nota.`
-      : 'O áudio não está disponível neste navegador.');
+      : result === 'fallback'
+        ? 'A amostra de piano não carregou; foi usado um som alternativo.'
+        : 'O áudio não está disponível neste navegador.');
   };
 
   return (
@@ -44,6 +55,8 @@ export function ChordPlayer({ config, topicId }: { config: ChordLessonConfig; to
           id={selectId}
           value={selected.id}
           onChange={(event) => {
+            playbackRequest.current += 1;
+            stopChordPlayback();
             setSelectedId(event.target.value);
             setStatus('');
           }}

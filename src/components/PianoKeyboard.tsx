@@ -32,7 +32,7 @@ export function PianoKeyboard({ highlight = [], interactive = true }: { highligh
   const selectedNotes = new Set(highlight.map(normalizeNoteLabel));
   const play = (index: number) => {
     if (!interactive) return;
-    playTone(frequencies[index], 0.65, 0.1);
+    playTone(frequencies[index], 0.65, 0.22);
     setActive(index);
     window.setTimeout(() => setActive((current) => current === index ? null : current), 170);
   };
@@ -90,6 +90,9 @@ export function PianoKeyboard({ highlight = [], interactive = true }: { highligh
         {interactive
           ? <>Toque uma tecla para ouvir. {highlight.length > 0 && <span>As notas desta aula estão realçadas.</span>}</>
           : <>Referência visual: as teclas do acorde selecionado estão realçadas.</>}
+      </p>
+      <p className="piano-credit">
+        Amostras do <a href="https://github.com/sfzinstruments/SalamanderGrandPiano" target="_blank" rel="noreferrer">Salamander Grand Piano</a>, por Alexander Holm, transpostas para as demais teclas · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a>.
       </p>
     </div>
   );
