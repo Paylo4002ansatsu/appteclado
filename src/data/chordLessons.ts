@@ -1,6 +1,7 @@
 export type ChordOption = {
   id: string;
   label: string;
+  group?: string;
   midi: number[];
   notes: string[];
   arpeggioMidi: number[];
@@ -18,11 +19,12 @@ function option(
   id: string,
   label: string,
   midi: number[],
-  settings: { spellings?: string[]; arpeggioMidi?: number[] } = {},
+  settings: { spellings?: string[]; arpeggioMidi?: number[]; group?: string } = {},
 ): ChordOption {
   return {
     id,
     label,
+    ...(settings.group ? { group: settings.group } : {}),
     midi,
     notes: midi.map((pitch, index) => `${settings.spellings?.[index] ?? noteNames[pitch % 12]}${Math.floor(pitch / 12) - 1}`),
     arpeggioMidi: settings.arpeggioMidi ?? midi,
@@ -102,20 +104,20 @@ const byTopic: Record<string, ChordLessonConfig> = {
   'n3-m11-t1': {
     prompt: 'Explore os acordes diatônicos de Dó maior e Lá menor natural. Os dois tons relativos compartilham as mesmas notas.',
     options: [
-      option('c-major-i', 'Dó maior · I (C)', [60, 64, 67]),
-      option('c-major-ii', 'Dó maior · ii (Dm)', [62, 65, 69]),
-      option('c-major-iii', 'Dó maior · iii (Em)', [64, 67, 71]),
-      option('c-major-iv', 'Dó maior · IV (F)', [65, 69, 72]),
-      option('c-major-v', 'Dó maior · V (G)', [67, 71, 74]),
-      option('c-major-vi', 'Dó maior · vi (Am)', [69, 72, 76]),
-      option('c-major-vii', 'Dó maior · vii° (Bdim)', [71, 74, 77]),
-      option('a-minor-i', 'Lá menor natural · i (Am)', [69, 72, 76]),
-      option('a-minor-ii', 'Lá menor natural · ii° (Bdim)', [71, 74, 77]),
-      option('a-minor-iii', 'Lá menor natural · III (C)', [72, 76, 79]),
-      option('a-minor-iv', 'Lá menor natural · iv (Dm)', [74, 77, 81]),
-      option('a-minor-v', 'Lá menor natural · v (Em)', [76, 79, 83]),
-      option('a-minor-vi', 'Lá menor natural · VI (F)', [77, 81, 84]),
-      option('a-minor-vii', 'Lá menor natural · VII (G)', [67, 71, 74]),
+      option('c-major-i', 'I · C', [60, 64, 67], { group: 'Dó maior' }),
+      option('c-major-ii', 'ii · Dm', [62, 65, 69], { group: 'Dó maior' }),
+      option('c-major-iii', 'iii · Em', [64, 67, 71], { group: 'Dó maior' }),
+      option('c-major-iv', 'IV · F', [65, 69, 72], { group: 'Dó maior' }),
+      option('c-major-v', 'V · G', [67, 71, 74], { group: 'Dó maior' }),
+      option('c-major-vi', 'vi · Am', [69, 72, 76], { group: 'Dó maior' }),
+      option('c-major-vii', 'vii° · Bdim', [71, 74, 77], { group: 'Dó maior' }),
+      option('a-minor-i', 'i · Am', [69, 72, 76], { group: 'Lá menor natural' }),
+      option('a-minor-ii', 'ii° · Bdim', [71, 74, 77], { group: 'Lá menor natural' }),
+      option('a-minor-iii', 'III · C', [72, 76, 79], { group: 'Lá menor natural' }),
+      option('a-minor-iv', 'iv · Dm', [74, 77, 81], { group: 'Lá menor natural' }),
+      option('a-minor-v', 'v · Em', [76, 79, 83], { group: 'Lá menor natural' }),
+      option('a-minor-vi', 'VI · F', [77, 81, 84], { group: 'Lá menor natural' }),
+      option('a-minor-vii', 'VII · G', [67, 71, 74], { group: 'Lá menor natural' }),
     ],
   },
   'n3-m11-t2': {

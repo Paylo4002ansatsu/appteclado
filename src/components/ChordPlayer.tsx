@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ListMusic, Play } from 'lucide-react';
-import type { ChordLessonConfig } from '../data/chordLessons';
+import type { ChordLessonConfig, ChordOption } from '../data/chordLessons';
 import { playArpeggio, playChord } from '../lib/audio';
 import { PianoKeyboard } from './PianoKeyboard';
 
@@ -11,6 +11,13 @@ export function ChordPlayer({ config, topicId }: { config: ChordLessonConfig; to
   const [status, setStatus] = useState('');
   const selected = config.options.find((option) => option.id === selectedId) ?? config.options[0];
   const selectId = `chord-select-${topicId}`;
+  const optionGroups = config.options.reduce<{ label: string; options: ChordOption[] }[]>((groups, option) => {
+    const label = option.group ?? '';
+    const currentGroup = groups.find((group) => group.label === label);
+    if (currentGroup) currentGroup.options.push(option);
+    else groups.push({ label, options: [option] });
+    return groups;
+  }, []);
 
   if (!selected) return null;
 
@@ -41,10 +48,13 @@ export function ChordPlayer({ config, topicId }: { config: ChordLessonConfig; to
             setStatus('');
           }}
         >
-          {config.options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+          {optionGroups.map((group, index) => group.label
+            ? <optgroup key={`${group.label}-${index}`} label={group.label}>{group.options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</optgroup>
+            : group.options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>))}
         </select>
       </div>
       <div className="chord-player-notes" aria-label={`Notas do acorde: ${selected.notes.join(', ')}`}>
+        {selected.group && <span className="chord-player-notes-label">TONALIDADE · {selected.group}</span>}
         <span className="chord-player-notes-label">NOTAS DO ACORDE</span>
         <div className="chord-note-list">
           {selected.notes.map((note, index) => <span className="chord-note-chip" key={`${note}-${index}`}>{note}</span>)}
