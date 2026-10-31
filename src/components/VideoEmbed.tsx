@@ -1,5 +1,6 @@
 import { ExternalLink, PlayCircle } from 'lucide-react';
 import type { VideoItem } from '../data/courseTypes';
+import { YoutubeClickToLoad } from './YoutubeClickToLoad';
 
 function videoId(url: string) {
   try {
@@ -14,6 +15,7 @@ function videoId(url: string) {
 }
 
 const present = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+const unverified = (value: string) => /^não verificado/i.test(value.trim());
 
 export function VideoEmbed({ video }: { video: VideoItem }) {
   const id = videoId(video.url);
@@ -22,11 +24,11 @@ export function VideoEmbed({ video }: { video: VideoItem }) {
     ['Avaliações e comentários', video.commentsEvidence],
     ['Áudio e imagem', video.audioVideoEvidence],
     ['Visualizações', video.viewsNote],
-  ].filter(([, value]) => present(value));
+  ].flatMap(([label, value]) => present(value) && !unverified(value) ? [[label, value] as const] : []);
   return (
     <article className="video-card">
       <div className="video-frame">
-        {id ? <iframe src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`} title={`${present(video.title) ? video.title : 'Vídeo'}${present(video.channel) ? ` — ${video.channel}` : ''}`} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : <div className="video-invalid"><PlayCircle size={28} /><span>Link não reconhecido</span></div>}
+        {id ? <YoutubeClickToLoad id={id} title={present(video.title) ? video.title : 'Vídeo'} channel={present(video.channel) ? video.channel : undefined} /> : <div className="video-invalid"><PlayCircle size={28} /><span>Link não reconhecido</span></div>}
       </div>
       <div className="video-info">
         <div className="video-badge-row">{present(video.badge) && <span className="curation-badge">{video.badge}</span>}{present(video.url) && <a className="text-link" href={video.url} target="_blank" rel="noreferrer">Abrir no YouTube <ExternalLink size={13} /></a>}</div>

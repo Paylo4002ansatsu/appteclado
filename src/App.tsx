@@ -9,6 +9,7 @@ import { TrailPage } from './pages/TrailPage';
 import { LevelPage, LessonPage, ModulePage, NotFoundPage } from './pages/CoursePages';
 import { CurationPage, GlossaryPage, LevelTestPage, PracticePage } from './pages/ToolsPages';
 import { AdminPage } from './pages/AdminPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 
 const navItems: { to: string; label: string; icon: ReactNode; end?: boolean }[] = [
   { to: '/', label: 'Início', icon: <Home size={18} />, end: true },
@@ -36,7 +37,7 @@ function AppShell() {
   }, [readyTopics, search]);
   const doneCount = completed.filter((id) => readyTopics.some((topic) => topic.id === id)).length;
   const totalProgress = Math.round(doneCount / Math.max(1, readyTopics.length) * 100);
-  const pathName = location.pathname === '/' ? 'Início' : navItems.find((item) => item.to !== '/' && location.pathname.startsWith(item.to))?.label ?? 'Sua trilha';
+  const pathName = location.pathname === '/' ? 'Início' : location.pathname === '/privacidade' ? 'Privacidade' : navItems.find((item) => item.to !== '/' && location.pathname.startsWith(item.to))?.label ?? 'Sua trilha';
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -87,7 +88,7 @@ function AppShell() {
           </div>
         </header>
         <main className="main-content"><Outlet /></main>
-        <footer className="site-footer"><span>Feito para aprender no seu ritmo.</span><span>Trilha do Teclado <span className="footer-dot">·</span> Curso livre e gratuito</span></footer>
+        <footer className="site-footer"><span>Feito para aprender no seu ritmo.</span><span className="footer-meta">Trilha do Teclado <span className="footer-dot">·</span> Curso livre e gratuito <span className="footer-dot">·</span> <NavLink to="/privacidade" className="footer-privacy">Privacidade</NavLink></span></footer>
       </div>
     </div>
   );
@@ -104,6 +105,7 @@ function PublicRoutes() {
     <Route path="/glossario" element={<GlossaryPage />} />
     <Route path="/pratica" element={<PracticePage />} />
     <Route path="/curadoria" element={<CurationPage />} />
+    <Route path="/privacidade" element={<PrivacyPage />} />
     <Route path="*" element={<NotFoundPage />} />
   </Route></Routes>;
 }

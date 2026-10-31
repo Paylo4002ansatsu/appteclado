@@ -1,4 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/fraunces-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/fraunces-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/fraunces-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/manrope-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/manrope-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/manrope-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/manrope-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 800; font-display: swap; src: url('/fonts/manrope-latin.woff2') format('woff2'); }
 
 :root {
   font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -748,4 +755,36 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+
+/* Página de privacidade */
+.privacy-page { width: 100%; max-width: 900px; margin: 0 auto; color: var(--ink); }
+.privacy-intro { padding: 14px 0 28px; border-bottom: 1px solid var(--line); }
+.privacy-intro h1 { margin: 12px 0 12px; max-width: 760px; font: 600 clamp(34px, 4.5vw, 52px)/1.08 var(--serif); letter-spacing: -.05em; }
+.privacy-intro h1 em { color: var(--green); font-style: italic; font-weight: 500; }
+.privacy-intro > p { max-width: 680px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+.privacy-intro > .privacy-updated { margin-top: 16px; color: var(--muted-2); font-size: 10px; }
+.privacy-updated strong { color: var(--muted); }
+.privacy-sections { display: grid; gap: 11px; padding-top: 23px; }
+.privacy-section { padding: 21px 23px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; }
+.privacy-section h2 { margin: 0 0 10px; font: 600 21px/1.25 var(--serif); letter-spacing: -.025em; }
+.privacy-section p { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.85; }
+.privacy-section p:first-of-type { margin-top: 0; }
+.privacy-section a { color: var(--green); font-weight: 700; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.privacy-section a:hover { color: var(--green-dark); }
+.privacy-section code { padding: 1px 4px; border-radius: 4px; background: var(--surface-2); color: var(--green-dark); font: 500 .92em/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.privacy-credits { background: var(--surface-2); }
+.footer-meta { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.footer-privacy { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.footer-privacy:hover { color: var(--green); }
+
+@media (max-width: 650px) {
+  .privacy-intro { padding: 8px 0 21px; }
+  .privacy-intro h1 { font-size: 36px; }
+  .privacy-intro > p { font-size: 10px; }
+  .privacy-section { padding: 16px 14px; }
+  .privacy-section h2 { font-size: 18px; }
+  .privacy-section p { font-size: 9px; }
+  .footer-meta { display: block; }
 }

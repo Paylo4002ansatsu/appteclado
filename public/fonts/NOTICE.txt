@@ -1,0 +1,15 @@
+Fontes locais da Trilha do Teclado
+
+Fraunces
+Copyright 2018 The Fraunces Project Authors (https://github.com/undercasetype/Fraunces)
+Licença: SIL Open Font License 1.1. Consulte Fraunces-OFL.txt.
+Arquivo: fraunces-latin.woff2 (subconjunto latino variável, servido localmente).
+Origem do binário: Google Fonts CSS API / Google Fonts, família Fraunces.
+
+Manrope
+Copyright 2018 The Manrope Project Authors (https://github.com/googlefonts/manrope)
+Licença: SIL Open Font License 1.1. Consulte Manrope-OFL.txt.
+Arquivo: manrope-latin.woff2 (subconjunto latino variável, servido localmente).
+Origem do binário: Google Fonts CSS API / Google Fonts, família Manrope.
+
+Os arquivos de licença acima são cópias dos textos publicados no repositório oficial Google Fonts em ofl/fraunces/OFL.txt e ofl/manrope/OFL.txt. As fontes WOFF2 servidas no site são mantidas neste diretório; não há solicitação de fontes a CDN no runtime.

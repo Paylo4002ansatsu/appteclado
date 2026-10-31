@@ -75,10 +75,18 @@ export const adminSessions = mysqlTable('admin_sessions', {
   index('admin_sessions_user_expiry_idx').on(table.userId, table.expiresAt),
 ]);
 
+export const adminLoginRateLimits = mysqlTable('admin_login_rate_limits', {
+  keyHash: varchar('key_hash', { length: 64 }).primaryKey(),
+  attempts: int('attempts').notNull(),
+  windowStartedAt: datetime('window_started_at', { mode: 'date', fsp: 3 }).notNull(),
+  windowEndsAt: datetime('window_ends_at', { mode: 'date', fsp: 3 }).notNull(),
+  updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 }).notNull(),
+}, (table) => [index('admin_login_rate_limits_window_idx').on(table.windowEndsAt)]);
+
 export const contentMigrations = mysqlTable('content_migrations', {
   key: varchar('key_name', { length: 191 }).primaryKey(),
   appliedAt: datetime('applied_at', { mode: 'date', fsp: 3 }).notNull().default(sql`CURRENT_TIMESTAMP(3)`),
   metadata: json('metadata').$type<Record<string, unknown> | null>(),
 });
 
-export const schema = { levels, modules, glossaryEntries, adminUsers, adminSessions, contentMigrations };
+export const schema = { levels, modules, glossaryEntries, adminUsers, adminSessions, adminLoginRateLimits, contentMigrations };

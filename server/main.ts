@@ -1,19 +1,49 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import express, { type NextFunction, type Request, type Response } from 'express';
-import { and, asc, eq, gt, inArray, isNull, ne, sql } from 'drizzle-orm';
+import helmet from 'helmet';
+import { and, asc, eq, gt, inArray, isNull, lte, ne, sql } from 'drizzle-orm';
 import { ZodError, z } from 'zod';
 import type { AdminGlossaryRecord, AdminModuleRecord, GlossaryDraftContent, ModuleSnapshot, PublishedModuleMetadata, PublicCourseResponse, PublicLevelData } from '../src/data/courseTypes.js';
-import { adminSessions, adminUsers, glossaryEntries, levels, modules } from './db/schema.js';
+import { adminLoginRateLimits, adminSessions, adminUsers, glossaryEntries, levels, modules } from './db/schema.js';
 import { db, pool } from './db/client.js';
 import { glossaryInputSchema, moduleSnapshotSchema, moduleMetadataSchema, parseModuleSnapshot } from './lib/content.js';
-import { clearAuthCookies, constantTimeStringEqual, CSRF_COOKIE, getCookie, hashPassword, randomToken, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, setCsrfCookie, setSessionCookie, sha256, verifyPassword } from './lib/security.js';
+import { clearAuthCookies, constantTimeStringEqual, CSRF_COOKIE, getCookie, hashPassword, needsPasswordRehash, randomToken, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, setCsrfCookie, setSessionCookie, sha256, verifyPassword } from './lib/security.js';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
 const jsonLimit = process.env.API_JSON_LIMIT ?? '3mb';
+const isProduction = process.env.NODE_ENV === 'production';
+app.set('strict routing', true);
+app.set('case sensitive routing', true);
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
+app.use(helmet({
+  contentSecurityPolicy: isProduction ? {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:'],
+      mediaSrc: ["'self'", 'blob:'],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      frameSrc: ['https://www.youtube-nocookie.com'],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      objectSrc: ["'none'"],
+    },
+  } : false,
+  hsts: isProduction ? { maxAge: 15_552_000, includeSubDomains: true } : false,
+  frameguard: false,
+  crossOriginResourcePolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+}));
+app.use((_request, response, next) => {
+  response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 app.use(express.json({ limit: jsonLimit }));
 
 function asIso(value: Date | string): string {
@@ -84,32 +114,8 @@ function routeParam(request: Request, name: string): string {
 type AuthContext = { userId: string; email: string; sessionId: string; tokenHash: string; csrfTokenHash: string };
 type AuthRequest = Request & { adminAuth?: AuthContext };
 
-const loginFailures = new Map<string, { count: number; resetAt: number }>();
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const LOGIN_LIMIT = 5;
-function loginFailureKey(request: Request, email: string): string {
-  return `${request.ip ?? 'unknown'}:${email.trim().toLowerCase()}`;
-}
-function blockedLogin(request: Request, email: string): number | null {
-  const entry = loginFailures.get(loginFailureKey(request, email));
-  if (!entry) return null;
-  if (entry.resetAt <= Date.now()) { loginFailures.delete(loginFailureKey(request, email)); return null; }
-  return entry.count >= LOGIN_LIMIT ? Math.max(1, Math.ceil((entry.resetAt - Date.now()) / 1000)) : null;
-}
-function countLoginFailure(request: Request, email: string): void {
-  const key = loginFailureKey(request, email);
-  const existing = loginFailures.get(key);
-  if (!existing || existing.resetAt <= Date.now()) loginFailures.set(key, { count: 1, resetAt: Date.now() + LOGIN_WINDOW_MS });
-  else existing.count += 1;
-}
-
 async function requireAuth(request: Request, response: Response, next: NextFunction): Promise<void> {
-  const pathname = request.originalUrl.split('?')[0] ?? '';
-  const known = (request.method === 'GET' && /^\/api\/admin\/(modules(?:\/[^/]+)?|glossary)$/.test(pathname))
-    || (request.method === 'POST' && /^\/api\/admin\/(modules|modules\/[^/]+\/(?:publish|unpublish)|videos\/[^/]+\/move|glossary(?:\/[^/]+\/(?:publish|unpublish))?|auth\/(?:logout|password))$/.test(pathname))
-    || (request.method === 'PUT' && /^\/api\/admin\/(modules\/reorder|modules\/[^/]+(?:\/draft)?|glossary\/[^/]+)$/.test(pathname))
-    || (request.method === 'DELETE' && /^\/api\/admin\/(modules\/[^/]+|glossary\/[^/]+)$/.test(pathname));
-  if (!known) { next(); return; }
   const token = getCookie(request, SESSION_COOKIE);
   if (!token) { sendApiError(response, 401, 'Autenticação necessária.'); return; }
   const tokenHash = sha256(token);
@@ -124,6 +130,65 @@ async function requireAuth(request: Request, response: Response, next: NextFunct
   (request as AuthRequest).adminAuth = { userId: row.userId, email: row.email, sessionId: row.sessionId, tokenHash, csrfTokenHash: row.csrfTokenHash };
   next();
 }
+
+function loginKeyHashes(request: Request, email: string): { ip: string; pair: string } {
+  const ip = request.ip ?? 'unknown';
+  return {
+    ip: sha256(`login-ip:${ip}`),
+    pair: sha256(`login-ip-email:${ip}\0${email.trim().toLowerCase()}`),
+  };
+}
+
+type LoginCheck = { user: typeof adminUsers.$inferSelect | null; waitSeconds: number | null };
+async function checkLoginAndCountFailure(request: Request, email: string, password: string): Promise<LoginCheck> {
+  const keys = loginKeyHashes(request, email);
+  const orderedKeys = [keys.ip, keys.pair].sort();
+  const now = new Date();
+  const nextWindow = new Date(now.getTime() + LOGIN_WINDOW_MS);
+  return db.transaction(async (tx) => {
+    await tx.delete(adminLoginRateLimits).where(lte(adminLoginRateLimits.windowEndsAt, now));
+    // Seed and lock both hashes in stable order so concurrent failures serialize per IP.
+    for (const keyHash of orderedKeys) {
+      await tx.insert(adminLoginRateLimits).values({
+        keyHash, attempts: 0, windowStartedAt: now, windowEndsAt: nextWindow, updatedAt: now,
+      }).onDuplicateKeyUpdate({ set: { updatedAt: now } });
+    }
+    const rows = await tx.select().from(adminLoginRateLimits)
+      .where(inArray(adminLoginRateLimits.keyHash, orderedKeys)).orderBy(asc(adminLoginRateLimits.keyHash)).for('update');
+    for (const row of rows) {
+      if (row.windowEndsAt.getTime() <= now.getTime()) {
+        await tx.update(adminLoginRateLimits).set({
+          attempts: 0, windowStartedAt: now, windowEndsAt: nextWindow, updatedAt: now,
+        }).where(eq(adminLoginRateLimits.keyHash, row.keyHash));
+      }
+    }
+    const current = rows.map((row) => row.windowEndsAt.getTime() <= now.getTime()
+      ? { ...row, attempts: 0, windowEndsAt: nextWindow }
+      : row);
+    const blocked = current.map((row) => ({ row, limit: row.keyHash === keys.ip ? 20 : 5 }))
+      .find(({ row, limit }) => row.attempts >= limit);
+    if (blocked) {
+      return { user: null, waitSeconds: Math.max(1, Math.ceil((blocked.row.windowEndsAt.getTime() - now.getTime()) / 1000)) };
+    }
+
+    const [user] = await tx.select().from(adminUsers).where(eq(adminUsers.email, email)).limit(1);
+    const valid = user ? await verifyPassword(password, user.passwordHash) : false;
+    if (!user || !valid) {
+      for (const keyHash of orderedKeys) {
+        await tx.update(adminLoginRateLimits)
+          .set({ attempts: sql`${adminLoginRateLimits.attempts} + 1`, updatedAt: now })
+          .where(eq(adminLoginRateLimits.keyHash, keyHash));
+      }
+      return { user: null, waitSeconds: null };
+    }
+
+    await tx.update(adminLoginRateLimits)
+      .set({ attempts: 0, windowStartedAt: now, windowEndsAt: nextWindow, updatedAt: now })
+      .where(eq(adminLoginRateLimits.keyHash, keys.pair));
+    return { user, waitSeconds: null };
+  });
+}
+
 function requireCsrf(request: Request, response: Response, next: NextFunction): void {
   const context = (request as AuthRequest).adminAuth;
   const csrf = getCookie(request, CSRF_COOKIE);
@@ -172,6 +237,8 @@ app.get('/api/public/course', async (_request, response, next) => {
   } catch (error) { next(error); }
 });
 
+// Express otherwise treats HEAD as an implicit GET; keep these auth endpoints GET-only.
+app.head('/api/admin/auth/csrf', requireAuth);
 app.get('/api/admin/auth/csrf', (_request, response) => {
   const token = randomToken();
   setCsrfCookie(response, token);
@@ -187,12 +254,14 @@ app.post('/api/admin/auth/login', async (request, response, next) => {
     const input = z.object({ email: z.string().trim().email().max(320), password: z.string().min(1).max(1024) }).safeParse(request.body);
     if (!input.success) { sendApiError(response, 400, 'E-mail ou senha inválidos.'); return; }
     const email = input.data.email.toLowerCase();
-    const waitSeconds = blockedLogin(request, email);
-    if (waitSeconds !== null) { response.setHeader('Retry-After', String(waitSeconds)); sendApiError(response, 429, 'Muitas tentativas. Tente novamente mais tarde.'); return; }
-    const [user] = await db.select().from(adminUsers).where(eq(adminUsers.email, email)).limit(1);
-    const valid = user ? await verifyPassword(input.data.password, user.passwordHash) : false;
-    if (!user || !valid) { countLoginFailure(request, email); sendApiError(response, 401, 'E-mail ou senha inválidos.'); return; }
-    loginFailures.delete(loginFailureKey(request, email));
+    const result = await checkLoginAndCountFailure(request, email, input.data.password);
+    if (result.waitSeconds !== null) { response.setHeader('Retry-After', String(result.waitSeconds)); sendApiError(response, 429, 'Muitas tentativas. Tente novamente mais tarde.'); return; }
+    const user = result.user;
+    if (!user) { sendApiError(response, 401, 'E-mail ou senha inválidos.'); return; }
+    if (needsPasswordRehash(user.passwordHash)) {
+      const passwordHash = await hashPassword(input.data.password);
+      await db.update(adminUsers).set({ passwordHash, updatedAt: new Date() }).where(eq(adminUsers.id, user.id));
+    }
     const rawToken = randomToken();
     const tokenHash = sha256(rawToken);
     const csrfTokenHash = sha256(csrfCookie);
@@ -206,6 +275,7 @@ app.post('/api/admin/auth/login', async (request, response, next) => {
   } catch (error) { next(error); }
 });
 
+app.head('/api/admin/auth/session', requireAuth);
 app.get('/api/admin/auth/session', async (request, response, next) => {
   try {
     response.setHeader('Cache-Control', 'no-store');
@@ -226,7 +296,13 @@ app.get('/api/admin/auth/session', async (request, response, next) => {
   } catch (error) { next(error); }
 });
 
-app.use('/api/admin', requireAuth);
+app.use(async (request, response, next) => {
+  if (/^\/api\/admin(?:\/|$)/i.test(request.path)) {
+    await requireAuth(request, response, next);
+    return;
+  }
+  next();
+});
 app.post('/api/admin/auth/logout', requireCsrf, async (request, response, next) => {
   try {
     const context = (request as AuthRequest).adminAuth!;
@@ -496,7 +572,13 @@ app.delete('/api/admin/glossary/:id', requireCsrf, async (request, response, nex
   } catch (error) { next(error); }
 });
 
-app.use('/api', (_request, response) => sendApiError(response, 404, 'API route not found.'));
+app.use((request, response, next) => {
+  if (/^\/api(?:\/|$)/i.test(request.path)) {
+    sendApiError(response, 404, 'API route not found.');
+    return;
+  }
+  next();
+});
 
 const dist = resolve(process.cwd(), 'dist');
 app.use(express.static(dist, { index: false, fallthrough: true }));

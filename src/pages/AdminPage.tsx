@@ -4,6 +4,7 @@ import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, Eye, FilePlus2, LogOut, Plus, 
 import type { AdminGlossaryRecord, AdminModuleRecord, AdminSessionResponse, ChordLessonConfig, ChordOption, ContentReadiness, CourseTopicData, GlossaryDraftContent, ModuleSnapshot, QuizQuestion, VideoItem } from '../data/courseTypes';
 import { useCourseContent } from '../context/CourseContentContext';
 import * as api from '../lib/adminApi';
+import { YoutubeClickToLoad } from '../components/YoutubeClickToLoad';
 import { AdminPreviewPage } from './AdminPreviewPage';
 import '../styles/admin.css';
 
@@ -215,7 +216,7 @@ function VideoEditor({ topic, modules, moduleId, onChange, onError, onMove, onDu
           <TextList label="URLs de evidência · uma por linha" values={video.evidenceUrls} onChange={(values) => update(index, { evidenceUrls: values })} />
         </div>
         {durationDrafts[video.id] && !/^(\d{1,3}):([0-5]\d)$/.test(durationDrafts[video.id]) && <Message kind="error">Use a duração no formato mm:ss (segundos entre 00 e 59).</Message>}
-        {video.url && (youtubeId ? <div className="admin-video-preview"><span>Prévia incorporada · sem reprodução automática</span><div className="admin-video-frame"><iframe title={`Prévia: ${video.title || 'vídeo do YouTube'}`} src={`https://www.youtube-nocookie.com/embed/${youtubeId}`} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div></div> : <Message kind="error">Link inválido. Informe um link de vídeo válido do YouTube.</Message>)}
+        {video.url && (youtubeId ? <div className="admin-video-preview"><span>Prévia disponível · clique para carregar</span><div className="admin-video-frame"><YoutubeClickToLoad id={youtubeId} title={video.title || 'Prévia do vídeo'} channel={video.channel || undefined} /></div></div> : <Message kind="error">Link inválido. Informe um link de vídeo válido do YouTube.</Message>)}
         <details className="admin-move-video"><summary>Mover vídeo para outro módulo ou tópico</summary><div className="admin-inline-form">
           <Field label="Módulo de destino"><select value={targetModule} onChange={(e) => { setTargetModule(e.target.value); setTargetTopic(''); }}><option value="">Selecione…</option>{modules.map((module) => <option key={module.id} value={module.id}>{module.draftContent.title || `Módulo ${module.number}`}</option>)}</select></Field>
           <Field label="Tópico de destino"><select value={targetTopic} onChange={(e) => setTargetTopic(e.target.value)}><option value="">Selecione…</option>{destination?.draftContent.topics.map((target) => <option key={target.id} value={target.id}>{target.title}</option>)}</select></Field>
