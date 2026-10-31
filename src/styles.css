@@ -719,6 +719,30 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .curation-topic-content { grid-template-columns: 1fr; }
   .curation-empty-stats { flex-direction: column; gap: 9px; }
 }
+.chord-section-description { color: var(--muted); font-size: 10px; line-height: 1.65; margin: 7px 0 0; }
+.chord-player { display: grid; gap: 12px; max-width: 660px; margin-top: 13px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.chord-player-prompt { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.chord-player-select-wrap { display: grid; gap: 6px; max-width: 560px; }
+.chord-player-select-wrap label { color: var(--ink); font-size: 9px; font-weight: 700; }
+.chord-player-select-wrap select { width: 100%; min-height: 42px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 11px; background: var(--surface-2); color: var(--ink); font: 500 11px var(--sans); }
+.chord-player-select-wrap select:focus-visible { outline: 3px solid rgba(98, 148, 109, .65); outline-offset: 2px; }
+.chord-player-notes { display: grid; gap: 7px; }
+.chord-player-notes-label { color: var(--muted-2); font-size: 7px; font-weight: 800; letter-spacing: .12em; }
+.chord-note-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chord-note-chip { padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--green-light); color: var(--green-dark); font-size: 9px; font-weight: 700; }
+:root[data-theme='dark'] .chord-note-chip { color: #d1e3d2; }
+.chord-player-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.chord-player-actions .button { min-height: 40px; }
+.chord-player-status { min-height: 14px; margin: 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
+.chord-player .keyboard-wrap { margin-top: 0; }
+.piano.is-readonly .white-key, .piano.is-readonly .black-key { pointer-events: none; cursor: default; }
+@media (max-width: 650px) {
+  .chord-player { gap: 11px; padding: 11px; }
+  .chord-player-select-wrap select { min-height: 46px; font-size: 16px; }
+  .chord-player-actions { flex-direction: column; }
+  .chord-player-actions .button { width: 100%; justify-content: center; }
+  .chord-section-description { max-width: 27em; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

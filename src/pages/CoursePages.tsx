@@ -8,6 +8,8 @@ import { useProgress } from '../context/ProgressContext';
 import { useVideoCatalog } from '../hooks/useVideoCatalog';
 import { ProgressBar } from '../components/ProgressBar';
 import { PianoKeyboard } from '../components/PianoKeyboard';
+import { ChordPlayer } from '../components/ChordPlayer';
+import { chordLessons } from '../data/chordLessons';
 import { VideoEmbed } from '../components/VideoEmbed';
 import { ModuleQuiz } from '../components/ModuleQuiz';
 
@@ -79,6 +81,7 @@ export function LessonPage() {
   const done = completed.includes(topic.id);
   const videoForTopic = videos.filter((video) => video.topicId === topic.id).slice(0, 3);
   const highlight = lesson?.highlight ?? topicHighlights[topic.id] ?? [];
+  const chordLesson = chordLessons[topic.id];
 
   return <div className="page-stack lesson-page">
     <div className="course-breadcrumb"><Link to="/trilha">Mapa</Link><ChevronRight size={14} /><Link to={`/nivel/${topic.level.id}`}>Nível {topic.level.number}</Link><ChevronRight size={14} /><Link to={`/modulo/${topic.module.id}`}>Módulo {topic.module.number}</Link></div>
@@ -87,7 +90,15 @@ export function LessonPage() {
       <article className="lesson-content">
         <header className="lesson-header"><span className="eyebrow">NÍVEL {topic.level.number} <span className="footer-dot">·</span> MÓDULO {String(topic.module.number).padStart(2, '0')} <span className="footer-dot">·</span> TÓPICO {String(topic.module.topics.findIndex((item) => item.id === topic.id) + 1).padStart(2, '0')}</span><h1>{topic.title}<em>.</em></h1><div className="lesson-meta"><span><Clock3 size={14} /> 5–10 min</span><span><Music2 size={14} /> Prática guiada</span></div></header>
         <section className="lesson-explanation"><h2>Vamos entender</h2><p>{lesson?.explanation}</p><div className="example-callout"><span className="callout-label">EXEMPLO</span><p>{lesson?.example}</p></div></section>
-        <section className="lesson-keyboard-section"><div className="lesson-section-heading"><div><span className="eyebrow">EXPERIMENTE</span><h2>Toque e escute.</h2></div><span className="optional-label">NO TECLADO VIRTUAL</span></div><PianoKeyboard highlight={highlight} /></section>
+        <section className="lesson-keyboard-section">
+          {chordLesson ? <>
+            <div className="lesson-section-heading"><div><span className="eyebrow">OUÇA EM CONTEXTO</span><h2>Escolha e escute.</h2><p className="chord-section-description">Compare o acorde completo e suas notas em sequência.</p></div><span className="optional-label">PAINEL DA AULA</span></div>
+            <ChordPlayer config={chordLesson} topicId={topic.id} />
+          </> : <>
+            <div className="lesson-section-heading"><div><span className="eyebrow">EXPERIMENTE</span><h2>Toque e escute.</h2></div><span className="optional-label">NO TECLADO VIRTUAL</span></div>
+            <PianoKeyboard highlight={highlight} />
+          </>}
+        </section>
         <section className="lesson-exercises"><div className="lesson-section-heading"><div><span className="eyebrow">MÃOS ÀS TECLAS</span><h2>Experimente agora.</h2></div><span className="exercise-count">{lesson?.exercises.length ?? 0} exercícios</span></div><ol className="exercise-list">{lesson?.exercises.map((exercise, index) => <li key={exercise}><span className="exercise-no">{String(index + 1).padStart(2, '0')}</span><p>{exercise}</p></li>)}</ol></section>
         <section className="checklist-section"><div className="lesson-section-heading"><div><span className="eyebrow">ANTES DE SEGUIR</span><h2>Domine antes de avançar.</h2></div></div><div className="checklist-items">{lesson?.checklist.map((item) => <label key={item} className="checklist-item"><input type="checkbox" checked={checks[topic.id]?.includes(item) ?? false} onChange={() => toggleCheck(topic.id, item)} /><span className="checkmark"><Check size={13} /></span><span>{item}</span></label>)}</div><button type="button" className={`button ${done ? 'button-completed' : 'button-primary'} complete-button`} onClick={() => toggleCompleted(topic.id)}>{done ? <><Check size={16} /> Aula concluída</> : <>Marcar como concluída <Check size={16} /></>}</button></section>
         <section className="videos-section"><div className="lesson-section-heading"><div><span className="eyebrow">OUÇA OUTRA EXPLICAÇÃO</span><h2>Vídeos selecionados.</h2><p>Escolhidos por didática e clareza — não apenas pela popularidade.</p></div></div>{loading ? <p className="empty-state">Carregando a curadoria…</p> : videoForTopic.length ? <div className="video-list">{videoForTopic.map((video, index) => <VideoEmbed key={`${video.url}-${index}`} video={video} />)}</div> : <div className="video-placeholder"><CirclePlay size={22} /><div><strong>Curadoria deste tópico em preparação.</strong><p>Os vídeos serão inseridos no arquivo de dados sem alterar as aulas.</p></div><Link to="/curadoria" className="text-link">Saiba como <ArrowRight size={14} /></Link></div>}</section>
