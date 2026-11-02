@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": "22.x"
+  },
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -n api,web -c green,blue \"env PORT=3001 tsx watch server/main.ts\" \"vite --host 0.0.0.0 --port 3000 --strictPort\"",

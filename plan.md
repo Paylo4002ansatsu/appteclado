@@ -100,7 +100,7 @@ Executar `pnpm audit` e atualizar dependências vulneráveis de severidade alta/
 
 ### Arquivos e estrutura previstos
 
-- `server/main.ts`, `server/lib/security.ts`, `server/db/schema.ts` e nova migration: guarda por padrão, cabeçalhos, rehash e tabela persistente de rate limit.
+- `server/app.ts`, `server/main.ts`, `server/lib/security.ts`, `server/db/schema.ts` e nova migration: guarda por padrão, cabeçalhos, rehash e tabela persistente de rate limit.
 - `src/components/VideoEmbed.tsx` e prévia do admin: iframe carregado somente por ação explícita; filtro de evidências não verificadas.
 - `src/pages/PrivacyPolicyPage.tsx`, `src/App.tsx`, footer e `public/manus-routes.json`: política e rota pública.
 - `public/fonts/` e `src/styles.css`: woff2 self-hosted, sem chamadas de terceiros para tipografia.
@@ -110,7 +110,7 @@ Executar `pnpm audit` e atualizar dependências vulneráveis de severidade alta/
 
 ## Evidência de auditoria externa (2026-10-31)
 
-Repositório público auditado: [GitLab — PauloGerson/projetoteclas](https://gitlab.com/PauloGerson/projetoteclas), branch `main`. A revisão local e somente leitura confirmou que a ref auditada correspondia ao `main` remoto; foram examinados 11 commits, 80 caminhos históricos e 107 blobs. Resultado: 0 nomes de arquivos sensíveis e 0 correspondências nos padrões de credenciais pesquisados. A análise de nomes/conteúdo não revelou segredo detectável a revogar; a DSN de desenvolvimento em `drizzle.config.ts` ainda será removida do código atual nesta rodada.
+Repositório público auditado: [GitLab — PauloGerson/projetoteclas](https://gitlab.com/PauloGerson/projetoteclas), branch `main`. A auditoria inicial de 2026-10-31 examinou 11 commits, 80 caminhos históricos e 107 blobs: nenhum nome de arquivo sensível nem credencial de produção foi encontrado. Em 2026-11-02, o hardening foi sincronizado ao `main` sem reescrever histórico; 29 arquivos foram comparados por SHA-256 e o README permaneceu inalterado. A ponta atual contém um commit adicional sobre a auditoria inicial. A referência localhost genérica removida é descrita separadamente abaixo; não é credencial de serviço remoto.
 
 
 ### Fontes tipográficas
@@ -135,13 +135,35 @@ A primeira auditoria do lockfile encontrou 2 avisos moderados e nenhum alto/crí
 - A política `/privacidade` informa armazenamento local, carregamento tardio do YouTube, áudio/fontes locais, limites do uso de analytics, LGPD, créditos e o marcador `[EMAIL DE CONTATO]`. O analytics configurável da plataforma foi confirmado desativado; o badge Manus permanece visível e pode incluir métricas próprias, explicitamente informado na política.
 - Curadoria pública: 59 vídeos no total; 46 têm pelo menos uma nota “não verificada” ocultada, totalizando 114 evidências ocultadas. Nenhuma nota interna aparece na saída pública.
 - A auditoria somente leitura do histórico GitLab registrada acima encontrou zero nomes de arquivos sensíveis e zero padrões de credenciais correspondentes nos 11 commits/80 caminhos/107 blobs examinados. `drizzle.config.ts` não mantém fallback de DSN; `DATABASE_URL` é exigida do ambiente. Não foi identificada credencial que precise ser revogada/rotacionada.
-- Pendências de entrega: substituir `[EMAIL DE CONTATO]` antes da publicação; autenticação end-to-end e prévia administrativa não foram testadas contra o banco compartilhado; a sincronização final ao `main` do GitLab ainda depende de uma sessão autorizada. O repositório canônico deste projeto segue sendo Manus e a publicação automática continua autorizada.
+- Pendências: substituir `[EMAIL DE CONTATO]` antes da publicação final; autenticação end-to-end e prévia administrativa não foram testadas contra o banco compartilhado. O GitLab `main` foi sincronizado, com README preservado; o repositório canônico Manus continua sendo a fonte dos checkpoints e a publicação automática continua autorizada.
 
 ### Estado do espelho antes da sincronização final
 
-A API pública do GitLab confirmou 11 commits em `main` e 92 caminhos na primeira página recursiva da árvore. A ponta `6117f525cd0e1f5d67979f7c0319b5e2d2160579` é um merge com os pais `4823a...` e o commit canônico Manus `43f845f...`; a única diferença de árvore entre esse merge e o commit canônico é a adição do README público de 37 linhas. A sincronização será feita sem reescrever histórico: integrar esse merge e manter o README, nunca force-push. Não há autenticação GitLab ativa no navegador/SSH nesta sessão, então o envio do espelho permanece dependente de autorização de escrita.
+Antes da sincronização, a API pública confirmou que `main` tinha 11 commits e 92 caminhos na primeira página da árvore. A ponta `6117f525cd0e1f5d67979f7c0319b5e2d2160579` era um merge com os pais `4823a...` e o commit canônico Manus `43f845f...`; a única diferença de árvore era a adição do README público de 37 linhas. Em 2026-11-02 o espelho recebeu as alterações de hardening por uma atualização normal de `main`; 29 arquivos foram verificados por SHA-256 e o README teve hash idêntico. Nenhum histórico foi reescrito ou removido.
 
 
 ### Nota sobre o scanner do diff
 
 A verificação do patch identificou apenas uma referência de conexão localhost que estava em uma linha removida do fallback antigo de desenvolvimento em `drizzle.config.ts`; era um valor local genérico, não uma DSN de serviço externo ou produção. A árvore staged atual não contém DSN hardcoded, o fallback foi eliminado e `DATABASE_URL` é obrigatória no ambiente. Como o histórico foi preservado sem reescrita, o diff da remoção pode exibir essa referência local em commits anteriores; não há segredo de produção identificado para revogar.
+
+
+## Adaptação Vercel serverless (solicitada em 2026-11-02)
+
+A tela publicada em `appteclado.vercel.app` é uma SPA Vite, e a falha observada ocorre porque o backend Express não está exposto em `/api/*`. Preservar o build do frontend como arquivos estáticos em `dist` e expor o Express como uma função Node compartilhada da Vercel. Separar a criação/registro de rotas do `app.listen`: `server/app.ts` exporta o Express app reutilizável; `server/main.ts` permanece somente como listener para Manus Preview/Docker. A entrada de função em `api/index.ts` encaminha as rotas e preserva método, headers, cookies, query e body. Em `vercel.json`, declarar build `pnpm build`, output `dist`, rewrite de `/api/*` para a função antes do fallback SPA e headers de segurança no HTML/arquivos estáticos; Helmet continua a cobrir respostas da API. Não executar migrations no início da função. Reutilizar o pool MySQL entre invocações quentes e manter o `DATABASE_URL` exclusivamente como Secret de Production, sem colocá-lo no Git, no frontend ou em artefatos de build. Para Vercel Production, cookies `Secure; SameSite=Strict`; preservar `SameSite=None; Secure` no Preview WebDev e tratamento `Lax`/não Secure para HTTP local.
+
+Fontes técnicas consultadas: [Express on Vercel](https://vercel.com/docs/frameworks/backend/express) documenta Express como uma Function e limita `express.static()`; por isso a SPA deve continuar estática no output Vite. [Node.js Functions](https://vercel.com/docs/functions/runtimes/node-js) recomenda uma função compartilhada em `api/` para rotas relacionadas. [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite) documenta output SPA e fallback; [Rewrites](https://vercel.com/docs/routing/rewrites) confirma que parâmetros de caminho podem ser encaminhados como query. [Vercel CLI env](https://vercel.com/docs/cli/env) documenta Secret por ambiente e redeploy para aplicar alterações.
+
+### Risco de credenciais TiDB antes da transferência
+
+A PingCAP informou que houve acesso não autorizado a sistemas internos entre 9 de setembro e 7 de outubro de 2026 e cópia de alguns dados de sistemas internos; declarou não haver evidência de acesso aos dados armazenados nos clusters TiDB na revisão publicada, mas a investigação de impacto por cliente continua. A recomendação oficial é trocar chaves de gestão TiDB Cloud e rotacionar credenciais/strings de conexão que tenham sido compartilhadas com o suporte. Fontes primárias: [relatório de incidente](https://www.pingcap.com/trust-hub/security/security-update-october-2026/), [ações recomendadas ao cliente](https://www.pingcap.com/trust-hub/security/customer-actions-october-2026/) e [nota do CEO](https://www.pingcap.com/trust-hub/security/ceo-note-october-2026/). Uma pergunta foi enviada ao usuário; não enviar a URL atual para a Vercel até a confirmação de que ela não foi compartilhada com o suporte, ou até receber uma URL já rotacionada.
+
+A documentação do [firewall TiDB Cloud Starter/Essential](https://docs.pingcap.com/tidbcloud/configure-serverless-firewall-rules-for-public-endpoints/) diz que novos endpoints públicos permitem todos os IPs por padrão, mas regras de firewall podem restringir conexões; [conexão por endpoint público](https://docs.pingcap.com/tidbcloud/connect-via-standard-connection-serverless/) exige TLS e origem autorizada. Confirmar o acesso somente por smoke de leitura; não abrir firewall nem alterar o banco sem autorização específica.
+
+
+### Evidência da adaptação Vercel — código e testes locais (2026-11-02)
+
+`server/app.ts` agora exporta o Express sem abrir listener; `server/main.ts` mantém o listener usado por Docker/Manus e seu encerramento do pool. `api/index.ts` é uma única entrada Node que reconstrói o caminho original `/api/*` enviado pelas rewrites e passa a mesma requisição ao Express. `vercel.json` declara o build Vite estático, rewrite API antes do fallback SPA e os cabeçalhos de segurança para as respostas do deployment; Node 22 foi fixado. `server/lib/security.ts` preserva overrides do Preview (`None; Secure`) e usa `Strict; Secure` em produção; HTTP de desenvolvimento fica `Lax` sem `Secure`.
+
+Verificações locais: `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm build`, JSON do `vercel.json`, testes de reconstrução de path e cookies passaram. O handler HTTP emulado da Function respondeu `/api/health` 200, `/api/public/course` 200 (6 níveis/24 módulos), `/api/admin/modules` 401 e rota desconhecida 404 JSON; servidor compilado persistente também serviu `/` e `/privacidade` com 200. Não houve escrita no banco. `pnpm audit` registra uma vulnerabilidade moderada dev-only em `esbuild`; nenhuma alta/crítica e audit de produção limpo.
+
+**Ainda não publicado ao GitHub/Vercel:** o repasse do `DATABASE_URL` e o push que dispararia o deployment foram pausados por segurança até o usuário esclarecer se a credencial atual foi compartilhada com o suporte PingCAP durante o incidente informado. Portanto, a rota pública Vercel só será validada após a decisão/rotação e deployment autorizado.

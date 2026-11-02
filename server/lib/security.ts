@@ -15,14 +15,17 @@ const cookieSecureSetting = process.env.APP_COOKIE_SECURE;
 if (cookieSecureSetting !== undefined && !['true', 'false'].includes(cookieSecureSetting.toLowerCase())) {
   throw new Error('APP_COOKIE_SECURE deve ser explicitamente true ou false.');
 }
-export const cookieSecure = cookieSecureSetting?.toLowerCase() !== 'false';
+const isProductionRuntime = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+export const cookieSecure = cookieSecureSetting === undefined
+  ? isProductionRuntime
+  : cookieSecureSetting.toLowerCase() === 'true';
 const sameSiteSetting = process.env.APP_COOKIE_SAME_SITE?.toLowerCase();
 if (sameSiteSetting !== undefined && !['none', 'lax', 'strict'].includes(sameSiteSetting)) {
   throw new Error('APP_COOKIE_SAME_SITE deve ser none, lax ou strict.');
 }
 const cookieSameSite: 'none' | 'lax' | 'strict' = sameSiteSetting === 'none' || sameSiteSetting === 'lax' || sameSiteSetting === 'strict'
   ? sameSiteSetting
-  : cookieSecure ? 'none' : 'lax';
+  : isProductionRuntime ? 'strict' : 'lax';
 if (cookieSameSite === 'none' && !cookieSecure) {
   throw new Error('APP_COOKIE_SECURE=true é obrigatório quando APP_COOKIE_SAME_SITE=none.');
 }
